@@ -1,0 +1,105 @@
+name: Release Automation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    # Skip the workflow if the commit is made by GitHub Actions
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.REPO_TOKEN }}  # Use the PAT for checkout
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Generate release notes
+        id: generate_release_notes
+        run: |
+          # Fetch all tags
+          git fetch --tags
+
+          # Check if any tags exist
+          if git describe --tags --abbrev=0 > /dev/null 2>&1; then
+            # If tags exist, get the latest tag
+            LATEST_TAG=$(git describe --tags --abbrev=0)
+            RELEASE_NOTES=$(git log $LATEST_TAG..HEAD --oneline --pretty=format:"- %s")
+          else
+            # If no tags exist, generate release notes from the first commit
+            RELEASE_NOTES=$(git log --oneline --pretty=format:"- %s")
+          fi
+
+          # Set the release notes as an output
+          echo "::set-output name=notes::$RELEASE_NOTES"
+
+      - name: Update README
+        run: |
+          echo "## Latest Release" >> README.md
+          echo "**Version:** ${{ github.ref_name }}" >> README.md
+          echo "**Release Notes:**" >> README.md
+          echo "${{ steps.generate_release_notes.outputs.notes }}" >> README.md
+
+      - name: Commit updated README
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add README.md
+          git commit -m "Update README for release ${{ github.ref_name }} [skip ci]"
+          git push https://${{ secrets.REPO_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+
+      - name: Generate Tag
+        id: generate_tag
+        run: |
+          # Fetch all tags
+          git fetch --tags
+
+          # Check if any tags exist
+          if git describe --tags --abbrev=0 > /dev/null 2>&1; then
+            # If tags exist, get the latest tag and increment the patch version
+            LATEST_TAG=$(git describe --tags --abbrev=0)
+            VERSION=$(echo $LATEST_TAG | awk -F. '{printf "%d.%d.%d", $1, $2, $3+1}')
+          else
+            # If no tags exist, start with v1.0.0
+            VERSION="1.0.0"
+          fi
+
+          # Create a new tag
+          NEW_TAG="v$VERSION"
+          git tag $NEW_TAG
+
+          # Push the new tag to the repository
+          git push https://${{ secrets.REPO_TOKEN }}@github.com/${{ github.repository }}.git $NEW_TAG
+
+          # Set the new tag as an output for use in later steps
+          echo "::set-output name=new_tag::$NEW_TAG"
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.generate_tag.outputs.new_tag }}  # Use the generated tag
+          release_name: Release ${{ steps.generate_tag.outputs.new_tag }}
+          body: ${{ steps.generate_release_notes.outputs.notes }}
+          draft: false
+          prerelease: false
+
+    #   - name: Notify Slack
+    #     uses: slackapi/slack-github-action@v1
+    #     with:
+    #       slack-message: "🚀 New Release: ${{ steps.generate_tag.outputs.new_tag }} has been published!\n\nRelease Notes:\n${{ steps.generate_release_notes.outputs.notes }}"
+    #     env:
+    #       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
