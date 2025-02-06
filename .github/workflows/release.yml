@@ -31,28 +31,73 @@ jobs:
       - name: Generate release notes
         id: generate_release_notes
         run: |
-          # Fetch all tags
           git fetch --tags
 
-          # Check if any tags exist
           if git describe --tags --abbrev=0 > /dev/null 2>&1; then
-            # If tags exist, get the latest tag
             LATEST_TAG=$(git describe --tags --abbrev=0)
-            RELEASE_NOTES=$(git log $LATEST_TAG..HEAD --oneline --pretty=format:"- %s")
+            GIT_LOG=$(git log $LATEST_TAG..HEAD --pretty=format:"- %h %s by %an on %ad" --date=short)
           else
-            # If no tags exist, generate release notes from the first commit
-            RELEASE_NOTES=$(git log --oneline --pretty=format:"- %s")
+            GIT_LOG=$(git log --pretty=format:"- %h %s by %an on %ad" --date=short)
           fi
 
-          # Set the release notes as an output
+          # Categorize changes
+          FEATURES=$(echo "$GIT_LOG" | grep -i "feat\|feature" || echo "None")
+          FIXES=$(echo "$GIT_LOG" | grep -i "fix\|bugfix" || echo "None")
+          IMPROVEMENTS=$(echo "$GIT_LOG" | grep -i "chore\|refactor\|perf\|improve" || echo "None")
+
+          CONTRIBUTORS=$(git shortlog -sne --since="$LATEST_TAG" | awk '{$1=""; print $0}')
+
+          RELEASE_NOTES="### 🚀 Release Details\n\n**Version:** ${{ github.ref_name }}\n\n**Date:** $(date +'%Y-%m-%d')\n\n### 🔹 Features\n$FEATURES\n\n### 🛠 Bug Fixes\n$FIXES\n\n### ⚡ Improvements\n$IMPROVEMENTS\n\n### 👥 Contributors\n$CONTRIBUTORS"
+
           echo "::set-output name=notes::$RELEASE_NOTES"
+
 
       - name: Update README
         run: |
-          echo "## Latest Release" >> README.md
-          echo "**Version:** ${{ github.ref_name }}" >> README.md
-          echo "**Release Notes:**" >> README.md
-          echo "${{ steps.generate_release_notes.outputs.notes }}" >> README.md
+            cat <<EOF > README.md
+            # 📦 Project Name
+  
+            A short description of the app goes here.
+  
+            ## 📖 Table of Contents
+            - [📦 Project Name](#-project-name)
+            - [🚀 Latest Release](#-latest-release)
+            - [🔧 Setup](#-setup)
+            - [🛠 Features](#-features)
+            - [📜 Changelog](#-changelog)
+            - [👥 Contributors](#-contributors)
+  
+            ## 🚀 Latest Release
+            **Version:** ${{ github.ref_name }}  
+            **Date:** $(date +'%Y-%m-%d')
+  
+            ## 🔧 Setup
+            1. Clone the repository:
+               \`\`\`bash
+               git clone https://github.com/${{ github.repository }}.git
+               \`\`\`
+            2. Install dependencies:
+               \`\`\`bash
+               npm install
+               \`\`\`
+            3. Run the application:
+               \`\`\`bash
+               npm start
+               \`\`\`
+  
+            ## 🛠 Features
+            - Feature 1: Description  
+            - Feature 2: Description  
+            - Feature 3: Description  
+  
+            ## 📜 Changelog
+            ${{ steps.generate_release_notes.outputs.notes }}
+  
+            ## 👥 Contributors
+            ${{ steps.generate_release_notes.outputs.contributors }}
+  
+            EOF
+  
 
       - name: Commit updated README
         run: |
