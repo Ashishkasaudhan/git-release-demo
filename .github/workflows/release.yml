@@ -90,6 +90,8 @@ jobs:
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
         with:
           tag_name: ${{ steps.generate_tag.outputs.new_tag }}  # Use the generated tag
           release_name: Release ${{ steps.generate_tag.outputs.new_tag }}
