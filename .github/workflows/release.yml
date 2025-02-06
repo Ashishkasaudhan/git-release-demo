@@ -7,7 +7,7 @@ on:
 
 jobs:
   release:
-    # Skip the workflow if the commit is made by GitHub Actions
+    # Skip workflow if commit message contains [skip ci]
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
 
@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.REPO_TOKEN }}  # Use the PAT for checkout
+          token: ${{ secrets.REPO_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -32,8 +32,8 @@ jobs:
         id: generate_release_notes
         run: |
           git fetch --tags
-
-          # Get latest tag, or fallback to first commit if none exist
+          
+          # Get latest tag or fallback to first commit if none exist
           if git describe --tags --abbrev=0 > /dev/null 2>&1; then
             LATEST_TAG=$(git describe --tags --abbrev=0)
             GIT_LOG=$(git log $LATEST_TAG..HEAD --pretty=format:"- %h %s by %an on %ad" --date=short)
@@ -42,7 +42,7 @@ jobs:
           fi
 
           if [ -z "$GIT_LOG" ]; then
-            GIT_LOG="- No new commits since the last release."
+            GIT_LOG="- No new commits since last release."
           fi
 
           # Categorize changes based on commit messages
@@ -51,108 +51,82 @@ jobs:
           IMPROVEMENTS=$(echo "$GIT_LOG" | grep -i "chore\|refactor\|perf\|improve" || echo "- None")
 
           CONTRIBUTORS=$(git log --format='%an' $LATEST_TAG..HEAD | sort | uniq)
-
           if [ -z "$CONTRIBUTORS" ]; then
             CONTRIBUTORS="- None"
           fi
 
-          # Using EOF to ensure proper newlines
-          RELEASE_NOTES=$(cat <<EOF
-### 🚀 Release Details
+          # Using EOF for proper formatting
+          cat <<EOF > RELEASE_NOTES.md
+          ### 🚀 Release Details
 
-**Version:** ${{ github.ref_name }}
+          **Version:** ${GITHUB_REF_NAME}
 
-**Date:** $(date +'%Y-%m-%d')
+          **Date:** $(date +'%Y-%m-%d')
 
-### 🔹 Features
-$FEATURES
+          ### 🔹 Features
+          $FEATURES
 
-### 🛠 Bug Fixes
-$FIXES
+          ### 🛠 Bug Fixes
+          $FIXES
 
-### ⚡ Improvements
-$IMPROVEMENTS
+          ### ⚡ Improvements
+          $IMPROVEMENTS
 
-### 👥 Contributors
-$CONTRIBUTORS
-EOF
-          )
+          ### 👥 Contributors
+          $CONTRIBUTORS
+          EOF
 
-          echo "$RELEASE_NOTES"
-          echo "notes<<EOF" >> $GITHUB_ENV
-          echo "$RELEASE_NOTES" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-
+          echo "NOTES=$(cat RELEASE_NOTES.md)" >> $GITHUB_ENV
+          echo "CONTRIBUTORS=$CONTRIBUTORS" >> $GITHUB_ENV
 
       - name: Update README
         run: |
-            cat <<EOF > README.MD
-            # 📦 Project Name
-  
-            A short description of the app goes here.
-  
-            ## 📖 Table of Contents
-            - [📦 Project Name](#-project-name)
-            - [🚀 Latest Release](#-latest-release)
-            - [🔧 Setup](#-setup)
-            - [🛠 Features](#-features)
-            - [📜 Changelog](#-changelog)
-            - [👥 Contributors](#-contributors)
-  
-            ## 🚀 Latest Release
-            **Version:** ${{ github.ref_name }}  
-            **Date:** $(date +'%Y-%m-%d')
-  
-            ## 🔧 Setup
-            1. Clone the repository:
-               \`\`\`bash
-               git clone https://github.com/${{ github.repository }}.git
-               \`\`\`
-            2. Install dependencies:
-               \`\`\`bash
-               npm install
-               \`\`\`
-            3. Run the application:
-               \`\`\`bash
-               npm start
-               \`\`\`
-  
-            ## 🛠 Features
-            - Feature 1: Description  
-            - Feature 2: Description  
-            - Feature 3: Description  
-  
-            ## 📜 Changelog
-            ${{ steps.generate_release_notes.outputs.notes }}
-  
-            ## 👥 Contributors
-            ${{ steps.generate_release_notes.outputs.contributors }}
-  
-            EOF
-  
+          cat <<EOF > README.md
+          # 📦 Project Name
+
+          A short description of the app goes here.
+
+          ## 📖 Table of Contents
+          - [📦 Project Name](#-project-name)
+          - [🚀 Latest Release](#-latest-release)
+          - [🔧 Setup](#-setup)
+          - [🛠 Features](#-features)
+          - [📜 Changelog](#-changelog)
+          - [👥 Contributors](#-contributors)
+
+          ## 🚀 Latest Release
+          **Version:** ${GITHUB_REF_NAME}  
+          **Date:** $(date +'%Y-%m-%d')
+
+          ## 📜 Changelog
+          ${NOTES}
+
+          ## 👥 Contributors
+          ${CONTRIBUTORS}
+
+          EOF
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          NOTES: ${{ env.NOTES }}
+          CONTRIBUTORS: ${{ env.CONTRIBUTORS }}
 
       - name: Commit updated README
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add README.md
-          git commit -m "Update README for release ${{ github.ref_name }} [skip ci]"
+          git commit -m "Update README for release ${GITHUB_REF_NAME} [skip ci]"
           git push https://${{ secrets.REPO_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
-
 
       - name: Generate Tag
         id: generate_tag
         run: |
           git fetch --tags
-          # Get the latest tag if available
           LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
 
           if [[ -z "$LATEST_TAG" ]]; then
-            # No previous tags exist, start with v1.0.0
             NEW_TAG="v1.0.0"
           else
-            # Extract major, minor, and patch numbers
             if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
               MAJOR="${BASH_REMATCH[1]}"
               MINOR="${BASH_REMATCH[2]}"
@@ -166,28 +140,25 @@ EOF
           fi
 
           echo "New Tag: $NEW_TAG"
-
           git tag $NEW_TAG
           git push https://${{ secrets.REPO_TOKEN }}@github.com/${{ github.repository }}.git $NEW_TAG
 
-          echo "::set-output name=new_tag::$NEW_TAG"
-  
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
             GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
         with:
-            tag_name: ${{ steps.generate_tag.outputs.new_tag }}  
-            release_name: Release ${{ steps.generate_tag.outputs.new_tag }}
-            body: ${{ env.notes }}
+            tag_name: ${{ env.NEW_TAG }}  
+            release_name: Release ${{ env.NEW_TAG }}
+            body: ${{ env.NOTES }}
             draft: false
             prerelease: false
-  
 
-    #   - name: Notify Slack
-    #     uses: slackapi/slack-github-action@v1
-    #     with:
-    #       slack-message: "🚀 New Release: ${{ steps.generate_tag.outputs.new_tag }} has been published!\n\nRelease Notes:\n${{ steps.generate_release_notes.outputs.notes }}"
-    #     env:
-    #       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    # - name: Notify Slack
+    #   uses: slackapi/slack-github-action@v1
+    #   with:
+    #     slack-message: "🚀 New Release: ${{ env.NEW_TAG }} has been published!\n\nRelease Notes:\n${{ env.NOTES }}"
+    #   env:
+    #
