@@ -64,8 +64,8 @@ jobs:
 
 
       - name: Generate Tag
-          id: generate_tag
-          run: |
+        id: generate_tag
+        run: |
             git fetch --tags
   
             # Check if any tags exist
