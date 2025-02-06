@@ -62,31 +62,35 @@ jobs:
           git commit -m "Update README for release ${{ github.ref_name }} [skip ci]"
           git push https://${{ secrets.REPO_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
 
+
       - name: Generate Tag
-        id: generate_tag
-        run: |
-          # Fetch all tags
-          git fetch --tags
-
-          # Check if any tags exist
-          if git describe --tags --abbrev=0 > /dev/null 2>&1; then
-            # If tags exist, get the latest tag and increment the patch version
-            LATEST_TAG=$(git describe --tags --abbrev=0)
-            VERSION=$(echo $LATEST_TAG | awk -F. '{printf "%d.%d.%d", $1, $2, $3+1}')
-          else
-            # If no tags exist, start with v1.0.0
-            VERSION="1.0.0"
-          fi
-
-          # Create a new tag
-          NEW_TAG="v$VERSION"
-          git tag $NEW_TAG
-
-          # Push the new tag to the repository
-          git push https://${{ secrets.REPO_TOKEN }}@github.com/${{ github.repository }}.git $NEW_TAG
-
-          # Set the new tag as an output for use in later steps
-          echo "::set-output name=new_tag::$NEW_TAG"
+          id: generate_tag
+          run: |
+            git fetch --tags
+  
+            # Check if any tags exist
+            if git describe --tags --abbrev=0 > /dev/null 2>&1; then
+              LATEST_TAG=$(git describe --tags --abbrev=0)
+              IFS='.' read -r MAJOR MINOR PATCH <<< "${LATEST_TAG//v/}"
+              PATCH=$((PATCH + 1))
+              NEW_TAG="v$MAJOR.$MINOR.$PATCH"
+            else
+              NEW_TAG="v1.0.0"
+            fi
+  
+            echo "New Tag: $NEW_TAG"
+  
+            # Check if tag already exists (to avoid conflicts)
+            if git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
+              echo "Tag $NEW_TAG already exists. Incrementing..."
+              NEW_TAG="v$MAJOR.$MINOR.$((PATCH + 1))"
+            fi
+  
+            git tag $NEW_TAG
+            git push https://${{ secrets.REPO_TOKEN }}@github.com/${{ github.repository }}.git $NEW_TAG
+  
+            echo "::set-output name=new_tag::$NEW_TAG"
+  
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
