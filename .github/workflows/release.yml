@@ -33,6 +33,7 @@ jobs:
         run: |
           git fetch --tags
 
+          # Get latest tag, or fallback to first commit if none exist
           if git describe --tags --abbrev=0 > /dev/null 2>&1; then
             LATEST_TAG=$(git describe --tags --abbrev=0)
             GIT_LOG=$(git log $LATEST_TAG..HEAD --pretty=format:"- %h %s by %an on %ad" --date=short)
@@ -40,21 +41,53 @@ jobs:
             GIT_LOG=$(git log --pretty=format:"- %h %s by %an on %ad" --date=short)
           fi
 
-          # Categorize changes
-          FEATURES=$(echo "$GIT_LOG" | grep -i "feat\|feature" || echo "None")
-          FIXES=$(echo "$GIT_LOG" | grep -i "fix\|bugfix" || echo "None")
-          IMPROVEMENTS=$(echo "$GIT_LOG" | grep -i "chore\|refactor\|perf\|improve" || echo "None")
+          if [ -z "$GIT_LOG" ]; then
+            GIT_LOG="- No new commits since the last release."
+          fi
 
-          CONTRIBUTORS=$(git shortlog -sne --since="$LATEST_TAG" | awk '{$1=""; print $0}')
+          # Categorize changes based on commit messages
+          FEATURES=$(echo "$GIT_LOG" | grep -i "feat\|feature" || echo "- None")
+          FIXES=$(echo "$GIT_LOG" | grep -i "fix\|bugfix" || echo "- None")
+          IMPROVEMENTS=$(echo "$GIT_LOG" | grep -i "chore\|refactor\|perf\|improve" || echo "- None")
 
-          RELEASE_NOTES="### 🚀 Release Details\n\n**Version:** ${{ github.ref_name }}\n\n**Date:** $(date +'%Y-%m-%d')\n\n### 🔹 Features\n$FEATURES\n\n### 🛠 Bug Fixes\n$FIXES\n\n### ⚡ Improvements\n$IMPROVEMENTS\n\n### 👥 Contributors\n$CONTRIBUTORS"
+          CONTRIBUTORS=$(git log --format='%an' $LATEST_TAG..HEAD | sort | uniq)
 
-          echo "::set-output name=notes::$RELEASE_NOTES"
+          if [ -z "$CONTRIBUTORS" ]; then
+            CONTRIBUTORS="- None"
+          fi
+
+          # Using EOF to ensure proper newlines
+          RELEASE_NOTES=$(cat <<EOF
+### 🚀 Release Details
+
+**Version:** ${{ github.ref_name }}
+
+**Date:** $(date +'%Y-%m-%d')
+
+### 🔹 Features
+$FEATURES
+
+### 🛠 Bug Fixes
+$FIXES
+
+### ⚡ Improvements
+$IMPROVEMENTS
+
+### 👥 Contributors
+$CONTRIBUTORS
+EOF
+          )
+
+          echo "$RELEASE_NOTES"
+          echo "notes<<EOF" >> $GITHUB_ENV
+          echo "$RELEASE_NOTES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
 
 
       - name: Update README
         run: |
-            cat <<EOF > README.md
+            cat <<EOF > README.MD
             # 📦 Project Name
   
             A short description of the app goes here.
@@ -143,13 +176,14 @@ jobs:
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+            GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
         with:
-          tag_name: ${{ steps.generate_tag.outputs.new_tag }}  # Use the generated tag
-          release_name: Release ${{ steps.generate_tag.outputs.new_tag }}
-          body: ${{ steps.generate_release_notes.outputs.notes }}
-          draft: false
-          prerelease: false
+            tag_name: ${{ steps.generate_tag.outputs.new_tag }}  
+            release_name: Release ${{ steps.generate_tag.outputs.new_tag }}
+            body: ${{ env.notes }}
+            draft: false
+            prerelease: false
+  
 
     #   - name: Notify Slack
     #     uses: slackapi/slack-github-action@v1
