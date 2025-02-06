@@ -66,30 +66,33 @@ jobs:
       - name: Generate Tag
         id: generate_tag
         run: |
-            git fetch --tags
-  
-            # Check if any tags exist
-            if git describe --tags --abbrev=0 > /dev/null 2>&1; then
-              LATEST_TAG=$(git describe --tags --abbrev=0)
-              IFS='.' read -r MAJOR MINOR PATCH <<< "${LATEST_TAG//v/}"
+          git fetch --tags
+          # Get the latest tag if available
+          LATEST_TAG=$(git tag --sort=-v:refname | head -n 1)
+
+          if [[ -z "$LATEST_TAG" ]]; then
+            # No previous tags exist, start with v1.0.0
+            NEW_TAG="v1.0.0"
+          else
+            # Extract major, minor, and patch numbers
+            if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              MAJOR="${BASH_REMATCH[1]}"
+              MINOR="${BASH_REMATCH[2]}"
+              PATCH="${BASH_REMATCH[3]}"
               PATCH=$((PATCH + 1))
               NEW_TAG="v$MAJOR.$MINOR.$PATCH"
             else
-              NEW_TAG="v1.0.0"
+              echo "Error: Latest tag '$LATEST_TAG' is not in expected format (vX.Y.Z)."
+              exit 1
             fi
-  
-            echo "New Tag: $NEW_TAG"
-  
-            # Check if tag already exists (to avoid conflicts)
-            if git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
-              echo "Tag $NEW_TAG already exists. Incrementing..."
-              NEW_TAG="v$MAJOR.$MINOR.$((PATCH + 1))"
-            fi
-  
-            git tag $NEW_TAG
-            git push https://${{ secrets.REPO_TOKEN }}@github.com/${{ github.repository }}.git $NEW_TAG
-  
-            echo "::set-output name=new_tag::$NEW_TAG"
+          fi
+
+          echo "New Tag: $NEW_TAG"
+
+          git tag $NEW_TAG
+          git push https://${{ secrets.REPO_TOKEN }}@github.com/${{ github.repository }}.git $NEW_TAG
+
+          echo "::set-output name=new_tag::$NEW_TAG"
   
 
       - name: Create GitHub Release
