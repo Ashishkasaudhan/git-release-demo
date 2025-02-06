@@ -33,51 +33,56 @@ jobs:
         run: |
           git fetch --tags
           
-          # Get latest tag or fallback to first commit if none exist
           if git describe --tags --abbrev=0 > /dev/null 2>&1; then
             LATEST_TAG=$(git describe --tags --abbrev=0)
             GIT_LOG=$(git log $LATEST_TAG..HEAD --pretty=format:"- %h %s by %an on %ad" --date=short)
           else
             GIT_LOG=$(git log --pretty=format:"- %h %s by %an on %ad" --date=short)
           fi
-
+      
           if [ -z "$GIT_LOG" ]; then
             GIT_LOG="- No new commits since last release."
           fi
-
-          # Categorize changes based on commit messages
+      
           FEATURES=$(echo "$GIT_LOG" | grep -i "feat\|feature" || echo "- None")
           FIXES=$(echo "$GIT_LOG" | grep -i "fix\|bugfix" || echo "- None")
           IMPROVEMENTS=$(echo "$GIT_LOG" | grep -i "chore\|refactor\|perf\|improve" || echo "- None")
-
+      
           CONTRIBUTORS=$(git log --format='%an' $LATEST_TAG..HEAD | sort | uniq)
           if [ -z "$CONTRIBUTORS" ]; then
             CONTRIBUTORS="- None"
           fi
-
-          # Using EOF for proper formatting
+      
+          # Create RELEASE_NOTES file
           cat <<EOF > RELEASE_NOTES.md
           ### 🚀 Release Details
-
-          **Version:** ${GITHUB_REF_NAME}
-
+      
+          **Version:** $GITHUB_REF_NAME
+      
           **Date:** $(date +'%Y-%m-%d')
-
+      
           ### 🔹 Features
           $FEATURES
-
+      
           ### 🛠 Bug Fixes
           $FIXES
-
+      
           ### ⚡ Improvements
           $IMPROVEMENTS
-
+      
           ### 👥 Contributors
           $CONTRIBUTORS
           EOF
-
-          echo "NOTES=$(cat RELEASE_NOTES.md)" >> $GITHUB_ENV
-          echo "CONTRIBUTORS=$CONTRIBUTORS" >> $GITHUB_ENV
+      
+          # Save environment variables properly
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          cat RELEASE_NOTES.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+      
+          echo "CONTRIBUTORS<<EOF" >> $GITHUB_ENV
+          echo "$CONTRIBUTORS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+      
 
       - name: Update README
         run: |
@@ -152,7 +157,7 @@ jobs:
         with:
             tag_name: ${{ env.NEW_TAG }}  
             release_name: Release ${{ env.NEW_TAG }}
-            body: ${{ env.NOTES }}
+            body: ${{ env.RELEASE_NOTES }}
             draft: false
             prerelease: false
 
