@@ -14,7 +14,7 @@ A short description of the app goes here.
 ## 🚀 Latest Release
 **Version:** main  
 **Date:** 2025-02-06
-
+####
 ## 📜 Changelog
 ### 🚀 Release Details
 
