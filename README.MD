@@ -30,7 +30,10 @@ A short description of the app goes here.
 - None
 
 ### 📝 PR Details
-No description provided
+## This release will cover updating readme.md #3 
+Jira Number: jira:123
+Owner: Aaron
+Contributor: Ashish Kasaudhan
 
 ### 💬 PR Comments
 
