@@ -35,16 +35,13 @@ jobs:
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           
-          # Safely handle PR description
           PR_DESCRIPTION=$(echo "${{ github.event.pull_request.body }}" | sed 's/^[[:space:]]*//' | sed '/^$/d')
           if [ -z "$PR_DESCRIPTION" ]; then
             PR_DESCRIPTION="No description provided"
           fi
           
-          # Fetch PR comments
           PR_COMMENTS=$(gh pr view $PR_NUMBER --json comments --template '{{range .comments}}{{.body}}{{"\n---\n"}}{{end}}')
           
-          # Prepare release notes
           {
             echo "### 📝 PR Description"
             echo "$PR_DESCRIPTION"
@@ -53,7 +50,6 @@ jobs:
             echo "$PR_COMMENTS"
           } > PR_RELEASE_NOTES.md
 
-          # Generate excerpts
           echo "$PR_DESCRIPTION" > PR_DESCRIPTION.txt
           echo "$PR_COMMENTS" > PR_COMMENTS.txt
 
@@ -112,7 +108,6 @@ jobs:
 
       - name: Update README
         run: |
-          # Safely update README
           awk '/## 📜 Changelog/{exit} {print}' README.MD > README_NEW.md || touch README_NEW.md
           echo "## 📜 Changelog" >> README_NEW.md
           cat RELEASE_NOTES.md >> README_NEW.md
@@ -143,6 +138,9 @@ jobs:
               exit 1
             fi
           fi
+
+          # Export NEW_TAG to environment
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
 
           git tag $NEW_TAG
           git push https://${{ secrets.REPO_TOKEN }}@github.com/${{ github.repository }}.git $NEW_TAG
