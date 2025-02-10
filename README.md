@@ -15,8 +15,19 @@ A short description of the app goes here.
 **Date:** 2025-02-06
 
 ## 📜 Changelog
+### 🚀 Release Details
 
+**Version:** main  
+**Date:** 2025-02-06
 
-## 👥 Contributors
+### 🔹 Features
 - None
 
+### 🛠 Bug Fixes
+- None
+
+### ⚡ Improvements
+- None
+
+### 👥 Contributors
+- None
