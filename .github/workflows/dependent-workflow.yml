@@ -1,0 +1,15 @@
+name: Dependent Workflow
+
+on:
+  workflow_run:
+    workflows: ["Echo World"]
+    types:
+      - completed
+
+jobs:
+  run_on_merge:
+    if: github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo Dependent Workflow
+        run: echo "First workflow completed, and a merge happened into main!"
