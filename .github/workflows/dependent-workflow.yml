@@ -48,10 +48,10 @@ jobs:
           else
             echo "should_run=false" >> "$GITHUB_OUTPUT"
 
-  run_on_push:
-    needs: check_conditions
-    if: needs.check_conditions.outputs.should_run == 'true' # This will now work correctly
-    runs-on: ubuntu-latest
-    steps:
-      - name: Echo Dependent Workflow
-        run: echo "Both conditions met: Echo World workflow succeeded and a push to main occurred!"
+run_on_push:
+  needs: check_conditions
+  if: ${{ needs.check_conditions.outputs.should_run == 'true' }}  # Fixed syntax
+  runs-on: ubuntu-latest
+  steps:
+    - name: Echo Dependent Workflow
+      run: echo "Both conditions met: Echo World workflow succeeded and a push to main occurred!"
