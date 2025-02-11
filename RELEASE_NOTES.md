@@ -1,7 +1,7 @@
 ### 🚀 Release Details
 
 **Version:** main  
-**Date:** 2025-02-10
+**Date:** 2025-02-11
 
 ### 🔹 Features
 - None
@@ -13,10 +13,7 @@
 - None
 
 ### 📝 PR Details
-## This release will cover updating readme.md #3 
-Jira Number: jira:123
-Owner: Aaron
-Contributor: Ashish Kasaudhan
+No description provided
 
 ### 💬 PR Comments
 
