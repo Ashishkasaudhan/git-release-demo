@@ -13,20 +13,15 @@ on:
 jobs:
   check_conditions:
     runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.evaluate_conditions.outputs.should_run }}
     steps:
-      - name: Print Event Context
-        run: echo "${{ toJson(github.event) }}"
-
       - name: Check if Echo World workflow succeeded
         id: check_workflow
         if: github.event_name == 'workflow_run'
         run: |
-          if [ "${{ github.event.workflow_run.conclusion }}" == "Success" ]; then
-            echo "workflow_success=true" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+            echo "workflow_success=true" >> $GITHUB_ENV
           else
-            echo "workflow_success=false" >> "$GITHUB_OUTPUT"
+            echo "workflow_success=false" >> $GITHUB_ENV
           fi
 
       - name: Check if push to main occurred
@@ -34,39 +29,28 @@ jobs:
         if: github.event_name == 'push'
         run: |
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "push_to_main=true" >> "$GITHUB_OUTPUT"
+            echo "push_to_main=true" >> $GITHUB_ENV
           else
-            echo "push_to_main=false" >> "$GITHUB_OUTPUT"
+            echo "push_to_main=false" >> $GITHUB_ENV
           fi
 
-      - name: Set default values for workflow_run
-        id: default_workflow
-        if: github.event_name != 'workflow_run'
-        run: |
-          echo "workflow_success=false" >> "$GITHUB_OUTPUT"
-
-      - name: Set default values for push
-        id: default_push
-        if: github.event_name != 'push'
-        run: |
-          echo "push_to_main=false" >> "$GITHUB_OUTPUT"
-
+  evaluate_conditions:
+    runs-on: ubuntu-latest
+    needs: [check_conditions]
+    steps:
       - name: Evaluate both conditions
         id: evaluate_conditions
         run: |
-          WORKFLOW_SUCCESS="${{ steps.check_workflow.outputs.workflow_success || 'false' }}"
-          PUSH_TO_MAIN="${{ steps.check_push.outputs.push_to_main || 'false' }}"
-
-          if [ "$WORKFLOW_SUCCESS" = "true" ] && [ "$PUSH_TO_MAIN" = "true" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          if [ "${{ env.WORKFLOW_SUCCESS }}" == "true" ] && [ "${{ env.PUSH_TO_MAIN }}" == "true" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
           else
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "should_run=false" >> $GITHUB_OUTPUT
           fi
 
   run_on_push:
-    needs: [check_conditions]
-    if: needs.check_conditions.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    needs: [evaluate_conditions]
+    if: needs.evaluate_conditions.outputs.should_run == 'true'
     steps:
       - name: Echo Dependent Workflow
         run: echo "Both conditions met, running the job"
