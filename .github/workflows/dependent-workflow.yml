@@ -13,19 +13,32 @@ on:
 jobs:
   check_conditions:
     runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
     steps:
-      - name: Check if PR was merged into main
-        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
-        run: echo "PR was merged into main!"
+      - name: Check PR Merge & Workflow Completion
+        id: check
+        run: |
+          PR_MERGED=false
+          WORKFLOW_SUCCESS=false
 
-      - name: Check if first workflow completed
-        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
-        run: echo "First workflow completed successfully!"
+          if [[ "${{ github.event_name }}" == "pull_request" && "${{ github.event.pull_request.merged }}" == "true" && "${{ github.event.pull_request.base.ref }}" == "main" ]]; then
+            PR_MERGED=true
+          fi
+
+          if [[ "${{ github.event_name }}" == "workflow_run" && "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+            WORKFLOW_SUCCESS=true
+          fi
+
+          if [[ "$PR_MERGED" == "true" && "$WORKFLOW_SUCCESS" == "true" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
 
   run_on_merge:
     needs: check_conditions
-    if: always() && github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && github.event.workflow_run.conclusion == 'success'
+    if: needs.check_conditions.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Echo Dependent Workflow
-        run: echo "First workflow completed, and a merge happened into main!"
+        run: echo "First workflow completed, and a PR was merged into main!"
