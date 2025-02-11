@@ -37,7 +37,7 @@ jobs:
           fi
 
       - name: Evaluate both conditions
-        id: check
+        id: check  # This ID is crucial!
         run: |
           WORKFLOW_SUCCESS="${{ steps.check_workflow.outputs.workflow_success || 'false' }}"
           PUSH_TO_MAIN="${{ steps.check_push.outputs.push_to_main || 'false' }}"
@@ -49,7 +49,7 @@ jobs:
 
   run_on_push:
     needs: check_conditions
-    if: needs.check_conditions.outputs.should_run == 'true' # Correct placement of the expression
+    if: needs.check_conditions.outputs.should_run == 'true' # Now this works correctly
     runs-on: ubuntu-latest
     steps:
       - name: Echo Dependent Workflow
