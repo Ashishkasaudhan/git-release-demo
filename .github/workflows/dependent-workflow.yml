@@ -16,6 +16,9 @@ jobs:
     outputs:
       should_run: ${{ steps.evaluate_conditions.outputs.should_run }}
     steps:
+      - name: Print Event Context
+        run: echo "${{ toJson(github.event) }}"
+
       - name: Check if Echo World workflow succeeded
         id: check_workflow
         if: github.event_name == 'workflow_run'
