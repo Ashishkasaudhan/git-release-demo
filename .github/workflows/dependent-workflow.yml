@@ -14,7 +14,7 @@ jobs:
   check_conditions:
     runs-on: ubuntu-latest
     outputs:
-      should_run: ${{ steps.check.outputs.should_run }}
+      should_run: ${{ steps.evaluate_conditions.outputs.should_run }}
     steps:
       - name: Check if Echo World workflow succeeded
         id: check_workflow
@@ -37,7 +37,7 @@ jobs:
           fi
 
       - name: Evaluate both conditions
-        id: check
+        id: evaluate_conditions
         run: |
           WORKFLOW_SUCCESS="${{ steps.check_workflow.outputs.workflow_success || 'false' }}"
           PUSH_TO_MAIN="${{ steps.check_push.outputs.push_to_main || 'false' }}"
