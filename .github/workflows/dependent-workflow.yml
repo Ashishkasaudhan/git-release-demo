@@ -27,7 +27,7 @@ jobs:
   run_on_merge:
     needs: check_pr_status
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' && needs.check_pr_status.outputs.is_merged == 'true'
+    if: ${{ github.event.workflow_run.conclusion == 'success' && needs.check_pr_status.outputs.is_merged == 'true' }}
     steps:
       - name: Execute Post-Merge Actions
         run: echo "Both conditions met: Previous workflow successful and PR merged to main!"
