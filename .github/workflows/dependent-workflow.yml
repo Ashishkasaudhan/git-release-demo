@@ -16,24 +16,37 @@ jobs:
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
     steps:
-      - name: Check Push & Workflow Completion
+      - name: Check if Echo World workflow succeeded
+        id: check_workflow
+        if: github.event_name == 'workflow_run'
+        run: |
+          if [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
+            echo "workflow_success=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "workflow_success=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check if push to main occurred
+        id: check_push
+        if: github.event_name == 'push'
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "push_to_main=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "push_to_main=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Evaluate both conditions
         id: check
         run: |
-          PUSH_TO_MAIN="false"
-          WORKFLOW_SUCCESS="false"
+          WORKFLOW_SUCCESS="${{ steps.check_workflow.outputs.workflow_success || 'false' }}"
+          PUSH_TO_MAIN="${{ steps.check_push.outputs.push_to_main || 'false' }}"
 
-          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            PUSH_TO_MAIN="true"
-          fi
-
-          if [ "${{ github.event_name }}" = "workflow_run" ] && [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
-            WORKFLOW_SUCCESS="true"
-          fi
-
-          if [ "$PUSH_TO_MAIN" = "true" ] && [ "$WORKFLOW_SUCCESS" = "true" ]; then
+          if [ "$WORKFLOW_SUCCESS" = "true" ] && [ "$PUSH_TO_MAIN" = "true" ]; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
           else
             echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
 
   run_on_push:
     needs: check_conditions
@@ -41,4 +54,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Echo Dependent Workflow
-        run: echo "First workflow completed, and a push happened to main!"
+        run: echo "Both conditions met: Echo World workflow succeeded and a push to main occurred!"
