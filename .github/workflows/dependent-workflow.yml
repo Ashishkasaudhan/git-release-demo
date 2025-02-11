@@ -15,12 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should_run: ${{ steps.check.outputs.should_run }}
+    optional: true  # Key change: Make the job optional
     steps:
       - name: Check if Echo World workflow succeeded
         id: check_workflow
         if: github.event_name == 'workflow_run'
         run: |
-          if [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
+          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
             echo "workflow_success=true" >> "$GITHUB_OUTPUT"
           else
             echo "workflow_success=false" >> "$GITHUB_OUTPUT"
@@ -30,26 +31,26 @@ jobs:
         id: check_push
         if: github.event_name == 'push'
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             echo "push_to_main=true" >> "$GITHUB_OUTPUT"
           else
             echo "push_to_main=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Evaluate both conditions
-        id: check  # This ID is crucial!
+        id: check
         run: |
           WORKFLOW_SUCCESS="${{ steps.check_workflow.outputs.workflow_success || 'false' }}"
           PUSH_TO_MAIN="${{ steps.check_push.outputs.push_to_main || 'false' }}"
 
-          if [ "$WORKFLOW_SUCCESS" = "true" ] && [ "$PUSH_TO_MAIN" = "true" ]; then
+          if [ "$WORKFLOW_SUCCESS" == "true" ] && [ "$PUSH_TO_MAIN" == "true" ]; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
           else
             echo "should_run=false" >> "$GITHUB_OUTPUT"
 
   run_on_push:
     needs: check_conditions
-    if: needs.check_conditions.outputs.should_run == 'true' # Now this works correctly
+    if: needs.check_conditions.outputs.should_run == 'true' # This will now work correctly
     runs-on: ubuntu-latest
     steps:
       - name: Echo Dependent Workflow
