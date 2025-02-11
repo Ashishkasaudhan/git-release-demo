@@ -2,11 +2,10 @@ name: Echo World
 
 on:
   workflow_dispatch: # Allows manual triggering
+
 jobs:
   say_hello:
     runs-on: ubuntu-latest
     steps:
       - name: Echo Hello World
         run: echo "Hello, world!"
-
-####        
