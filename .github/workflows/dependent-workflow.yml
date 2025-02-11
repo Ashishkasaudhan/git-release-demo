@@ -1,6 +1,10 @@
 name: Dependent Workflow
 
 on:
+  pull_request:
+    types:
+      - closed # Triggers when a PR is closed
+
   workflow_run:
     workflows: ["Echo World"]
     types:
@@ -8,22 +12,10 @@ on:
 
 jobs:
   run_on_merge:
+    if: |
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main branch
-        uses: actions/checkout@v4
-        with:
-          ref: main  # Ensure we're on the latest main branch
-
-      - name: Check if last commit was a merge
-        run: |
-          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
-          if echo "$LAST_COMMIT_MSG" | grep -qi "merge pull request"; then
-            echo "This was a merge commit!"
-          else
-            echo "No merge detected, exiting."
-            exit 1
-          fi
-
       - name: Echo Dependent Workflow
         run: echo "First workflow completed, and a merge happened into main!"
