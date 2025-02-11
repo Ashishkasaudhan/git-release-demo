@@ -39,20 +39,19 @@ jobs:
       - name: Evaluate both conditions
         id: check
         run: |
-              WORKFLOW_SUCCESS="${{ steps.check_workflow.outputs.workflow_success || 'false' }}"
-              PUSH_TO_MAIN="${{ steps.check_push.outputs.push_to_main || 'false' }}"
-          
-              if [ "$WORKFLOW_SUCCESS" = "true" ] && [ "$PUSH_TO_MAIN" = "true" ]; then
-                echo "should_run=true" >> "$GITHUB_OUTPUT"
-              else
-                echo "should_run=false" >> "$GITHUB_OUTPUT"
-              fi
-          
+          WORKFLOW_SUCCESS="${{ steps.check_workflow.outputs.workflow_success || 'false' }}"
+          PUSH_TO_MAIN="${{ steps.check_push.outputs.push_to_main || 'false' }}"
+
+          if [ "$WORKFLOW_SUCCESS" = "true" ] && [ "$PUSH_TO_MAIN" = "true" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
 
   run_on_push:
-    needs: check_conditions
-    if: ${{ needs.check_conditions.outputs.should_run == 'true' }}  # Fixed syntax
+    needs: [check_conditions]
+    if: needs.check_conditions.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Echo Dependent Workflow
-        run: echo "Both conditions"
+        run: echo "Both conditions met, running the job"
