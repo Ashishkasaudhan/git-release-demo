@@ -3,7 +3,7 @@ name: Dependent Workflow
 on:
   pull_request:
     types:
-      - closed # Triggers when a PR is closed
+      - closed
 
   workflow_run:
     workflows: ["Echo World"]
@@ -11,12 +11,21 @@ on:
       - completed
 
 jobs:
+  check_conditions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR was merged into main
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+        run: echo "PR was merged into main!"
+
+      - name: Check if first workflow completed
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+        run: echo "First workflow completed successfully!"
+
   run_on_merge:
-    if: |
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.base.ref == 'main'
+    needs: check_conditions
+    if: always() && github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Echo Dependent Workflow
         run: echo "First workflow completed, and a merge happened into main!"
-#####
