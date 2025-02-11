@@ -22,15 +22,15 @@ jobs:
           PUSH_TO_MAIN="false"
           WORKFLOW_SUCCESS="false"
 
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
             PUSH_TO_MAIN="true"
           fi
 
-          if [[ "${{ github.event_name }}" == "workflow_run" && "${{ github.event.workflow_run.conclusion }}" == "success" ]]; then
+          if [ "${{ github.event_name }}" = "workflow_run" ] && [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
             WORKFLOW_SUCCESS="true"
           fi
 
-          if [[ "$PUSH_TO_MAIN" == "true" && "$WORKFLOW_SUCCESS" == "true" ]]; then
+          if [ "$PUSH_TO_MAIN" = "true" ] && [ "$WORKFLOW_SUCCESS" = "true" ]; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
           else
             echo "should_run=false" >> "$GITHUB_OUTPUT"
