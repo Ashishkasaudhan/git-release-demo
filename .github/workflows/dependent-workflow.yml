@@ -23,7 +23,7 @@ jobs:
         id: check_workflow
         if: github.event_name == 'workflow_run'
         run: |
-          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+          if [ "${{ github.event.workflow_run.conclusion }}" == "Success" ]; then
             echo "workflow_success=true" >> "$GITHUB_OUTPUT"
           else
             echo "workflow_success=false" >> "$GITHUB_OUTPUT"
