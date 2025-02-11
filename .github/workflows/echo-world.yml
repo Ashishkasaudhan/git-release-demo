@@ -2,7 +2,6 @@ name: Echo World
 
 on:
   workflow_dispatch: # Allows manual triggering
-vdfgfdgfd
 jobs:
   say_hello:
     runs-on: ubuntu-latest
