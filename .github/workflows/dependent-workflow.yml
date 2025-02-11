@@ -7,27 +7,23 @@ on:
       - completed
 
 jobs:
-  check_pr_status:
+  run_on_merge:
     runs-on: ubuntu-latest
-    outputs:
-      is_merged: ${{ steps.pr_check.outputs.is_merged }}
     steps:
-      - name: Check PR status
-        id: pr_check
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Ensure we're on the latest main branch
+
+      - name: Check if last commit was a merge
         run: |
-          PR_NUMBER=$(gh pr list --search "sha:${{ github.event.workflow_run.head_sha }}" --state merged --json number -q '.[0].number')
-          if [ ! -z "$PR_NUMBER" ]; then
-            echo "is_merged=true" >> $GITHUB_OUTPUT
+          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+          if echo "$LAST_COMMIT_MSG" | grep -qi "merge pull request"; then
+            echo "This was a merge commit!"
           else
-            echo "is_merged=false" >> $GITHUB_OUTPUT
+            echo "No merge detected, exiting."
+            exit 1
           fi
 
-  run_on_merge:
-    needs: check_pr_status
-    runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' && needs.check_pr_status.outputs.is_merged == 'true'
-    steps:
-      - name: Execute Post-Merge Actions
-        run: echo "Both conditions met: Previous workflow successful and PR merged to main!"
+      - name: Echo Dependent Workflow
+        run: echo "First workflow completed, and a merge happened into main!"
