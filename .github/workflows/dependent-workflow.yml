@@ -39,6 +39,18 @@ jobs:
             echo "push_to_main=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Set default values for workflow_run
+        id: default_workflow
+        if: github.event_name != 'workflow_run'
+        run: |
+          echo "workflow_success=false" >> "$GITHUB_OUTPUT"
+
+      - name: Set default values for push
+        id: default_push
+        if: github.event_name != 'push'
+        run: |
+          echo "push_to_main=false" >> "$GITHUB_OUTPUT"
+
       - name: Evaluate both conditions
         id: evaluate_conditions
         run: |
