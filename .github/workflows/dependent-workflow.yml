@@ -54,4 +54,4 @@ run_on_push:
   runs-on: ubuntu-latest
   steps:
     - name: Echo Dependent Workflow
-      run: echo "Both conditions met: Echo World workflow succeeded and a push to main occurred!"
+      run: echo "Both conditions"
