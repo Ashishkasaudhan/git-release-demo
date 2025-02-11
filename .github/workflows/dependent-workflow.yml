@@ -5,20 +5,31 @@ on:
     workflows: ["Echo World"]
     types:
       - completed
-  pull_request:
-    types: [closed]
-    branches:
-      - main
 
 jobs:
+  check_pr_status:
+    runs-on: ubuntu-latest
+    outputs:
+      is_merged: ${{ steps.pr_check.outputs.is_merged }}
+    steps:
+      - name: Check PR status
+        id: pr_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list --search "sha:${{ github.event.workflow_run.head_sha }}" --state merged --json number -q '.[0].number')
+          if [ ! -z "$PR_NUMBER" ]; then
+            echo "is_merged=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_merged=false" >> $GITHUB_OUTPUT
+          fi
+
   run_on_merge:
+    needs: check_pr_status
     if: |
       github.event.workflow_run.conclusion == 'success' && 
-      github.event.pull_request.merged == true && 
-      github.event.pull_request.base.ref == 'main'
+      needs.check_pr_status.outputs.is_merged == 'true'
     runs-on: ubuntu-latest
-    
     steps:
       - name: Execute Post-Merge Actions
-        run: echo "Previous workflow completed and PR merged to main!"
-        
+        run: echo "Both conditions met: Previous workflow successful and PR merged to main!"
