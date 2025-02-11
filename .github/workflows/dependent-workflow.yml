@@ -39,13 +39,15 @@ jobs:
       - name: Evaluate both conditions
         id: check
         run: |
-          WORKFLOW_SUCCESS="${{ steps.check_workflow.outputs.workflow_success || 'false' }}"
-          PUSH_TO_MAIN="${{ steps.check_push.outputs.push_to_main || 'false' }}"
-
-          if [ "$WORKFLOW_SUCCESS" == "true" ] && [ "$PUSH_TO_MAIN" == "true" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
+              WORKFLOW_SUCCESS="${{ steps.check_workflow.outputs.workflow_success || 'false' }}"
+              PUSH_TO_MAIN="${{ steps.check_push.outputs.push_to_main || 'false' }}"
+          
+              if [ "$WORKFLOW_SUCCESS" = "true" ] && [ "$PUSH_TO_MAIN" = "true" ]; then
+                echo "should_run=true" >> "$GITHUB_OUTPUT"
+              else
+                echo "should_run=false" >> "$GITHUB_OUTPUT"
+              fi
+          
 
   run_on_push:
     needs: check_conditions

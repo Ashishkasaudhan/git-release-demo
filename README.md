@@ -2,7 +2,6 @@
 
 A short description of the app goes here.
 
-####
 ## 📖 Table of Contents
 - [📦 Project Name](#-project-name)
 - [🚀 Latest Release](#-latest-release)
@@ -14,12 +13,12 @@ A short description of the app goes here.
 ## 🚀 Latest Release
 **Version:** main  
 **Date:** 2025-02-06
-####
+
 ## 📜 Changelog
 ### 🚀 Release Details
 
 **Version:** main  
-**Date:** 2025-02-06
+**Date:** 2025-02-11
 
 ### 🔹 Features
 - None
@@ -30,5 +29,12 @@ A short description of the app goes here.
 ### ⚡ Improvements
 - None
 
+### 📝 PR Details
+No description provided
+
+### 💬 PR Comments
+
+
 ### 👥 Contributors
-- None
+Ashish Kasaudhan
+Ashishkasaudhan
