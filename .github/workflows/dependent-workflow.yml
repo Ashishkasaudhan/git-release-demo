@@ -4,8 +4,7 @@ on:
   workflow_dispatch:
   workflow_run:
     workflows: ['Echo']
-    types:
-      - [completed]
+    types: [completed]
 
   # push:
   #   branches:
