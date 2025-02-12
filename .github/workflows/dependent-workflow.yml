@@ -3,9 +3,9 @@ name: Dependent Workflow
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Echo World"]
+    workflows: ['Echo']
     types:
-      - completed
+      - [completed]
 
   # push:
   #   branches:
