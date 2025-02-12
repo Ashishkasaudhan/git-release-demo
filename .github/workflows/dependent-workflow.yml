@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["Echo World"]
     types:
-      - [completed]
+      - completed
 
   push:
     branches:
