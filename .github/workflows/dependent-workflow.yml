@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["Echo World"]
     types:
-      - completed
+      - [completed]
 
   push:
     branches:
@@ -24,33 +24,33 @@ jobs:
             echo "workflow_success=false" >> $GITHUB_ENV
           fi
 
-      - name: Check if push to main occurred
-        id: check_push
-        if: github.event_name == 'push'
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "push_to_main=true" >> $GITHUB_ENV
-          else
-            echo "push_to_main=false" >> $GITHUB_ENV
-          fi
+  #     - name: Check if push to main occurred
+  #       id: check_push
+  #       if: github.event_name == 'push'
+  #       run: |
+  #         if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+  #           echo "push_to_main=true" >> $GITHUB_ENV
+  #         else
+  #           echo "push_to_main=false" >> $GITHUB_ENV
+  #         fi
 
-  evaluate_conditions:
-    runs-on: ubuntu-latest
-    needs: [check_conditions]
-    steps:
-      - name: Evaluate both conditions
-        id: evaluate_conditions
-        run: |
-          if [ "${{ env.WORKFLOW_SUCCESS }}" == "true" ] && [ "${{ env.PUSH_TO_MAIN }}" == "true" ]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          else
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          fi
+  # evaluate_conditions:
+  #   runs-on: ubuntu-latest
+  #   needs: [check_conditions]
+  #   steps:
+  #     - name: Evaluate both conditions
+  #       id: evaluate_conditions
+  #       run: |
+  #         if [ "${{ env.WORKFLOW_SUCCESS }}" == "true" ] && [ "${{ env.PUSH_TO_MAIN }}" == "true" ]; then
+  #           echo "should_run=true" >> $GITHUB_OUTPUT
+  #         else
+  #           echo "should_run=false" >> $GITHUB_OUTPUT
+  #         fi
 
-  run_on_push:
-    runs-on: ubuntu-latest
-    needs: [evaluate_conditions]
-    if: needs.evaluate_conditions.outputs.should_run == 'true'
-    steps:
-      - name: Echo Dependent Workflow
-        run: echo "Both conditions met, running the job"
+  # run_on_push:
+  #   runs-on: ubuntu-latest
+  #   needs: [evaluate_conditions]
+  #   if: needs.evaluate_conditions.outputs.should_run == 'true'
+  #   steps:
+  #     - name: Echo Dependent Workflow
+  #       run: echo "Both conditions met, running the job"
