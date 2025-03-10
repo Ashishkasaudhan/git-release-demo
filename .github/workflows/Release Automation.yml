@@ -160,4 +160,7 @@ jobs:
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${{ env.NEW_TAG }}"
           echo "🚀 **[Today Release]($RELEASE_URL)**"
 
-          
+      - name: Print Release Link
+        run: |
+          echo "Today Release: [This is the link](https://github.com/${{ github.repository }}/releases/tag/${{ env.NEW_TAG }})"
+       
