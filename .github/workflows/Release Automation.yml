@@ -158,5 +158,6 @@ jobs:
       - name: Display Release URL
         run: |
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${{ env.NEW_TAG }}"
-          echo "🚀 **Release Created:** [Click here to view]($RELEASE_URL)"
+          echo "🚀 **[Today Release]($RELEASE_URL)**"
+
           
