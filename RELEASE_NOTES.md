@@ -1,4 +1,4 @@
-#### 🚀 Release Details
+### 🚀 Release Details
 
 **Version:** main  
 **Date:** 2025-03-10
@@ -20,4 +20,3 @@ No description provided
 
 ### 👥 Contributors
 Ashish Kasaudhan
-Ashishkasaudhan
